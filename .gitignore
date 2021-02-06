@@ -1,0 +1,10 @@
+.dub
+docs.json
+__dummy.html
+*.o
+*.obj
+*.bin
+tmpconfig.json
+dub.selections.json
+/wants-pet
+

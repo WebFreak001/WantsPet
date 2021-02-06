@@ -1,0 +1,177 @@
+doctype html
+
+html(lang="en")
+	- import std.uri : encodeComponent;
+	- import vibe.data.json;
+
+	head
+		meta(charset="UTF-8")
+		meta(name="viewport", content="width=device-width, initial-scale=1.0")
+		meta(http-equiv="X-UA-Compatible", content="ie=edge")
+		title= config.title
+		//- meta(http-equiv="Content-Security-Policy", content="default-src 'self'; style-src 'nonce-" ~ nonce ~ "'; script-src 'nonce-" ~ nonce ~ "'; connect-src wss://" ~ req.host ~ "/ws")
+		link(rel="author", href="humans.txt")
+		link(rel="preload", href=config.gif, as="image")
+		- foreach (particle; config.particles)
+			link(rel="preload", href=particle.image, as="image")
+		meta(name="theme-color", content=config.style.color)
+
+		//
+			All HTML, CSS and JS code on this website is licensed under CC0 (public domain)
+
+			The server backend is licensed under CC0 and can be found at https://github.com/WebFreak001/WantsPet
+
+			Pet Gif Base: https://benisland.neocities.org/petpet/
+			Twitter Logo: materialdesignicons
+
+		meta(itemprop="name", content=config.title)
+		meta(itemprop="description", content=config.description)
+		meta(itemprop="image", content="https://" ~ req.host ~ config.gif)
+
+		meta(name="twitter:card", content="summary")
+		meta(name="twitter:site", content=config.twitterUser)
+		meta(name="twitter:creator", content="@WebFreak001")
+		meta(name="twitter:url", content="https://" ~ req.host)
+		meta(name="twitter:title", content=config.title)
+		meta(name="twitter:description", content=config.description)
+		meta(name="twitter:image", content="https://" ~ req.host ~ config.gif)
+		meta(name="twitter:image:alt", content=config.gifAlt)
+
+		style(nonce=nonce)!= config.style.applyVariables(import("style.css"))
+	body.no-connection
+		<div class="wrapper">
+			.filler
+			.content
+				h1= config.titleShort
+				.img-wrapper
+					img(src=config.gif, alt=config.gifAlt)
+				noscript Sorry, you can only pet with JavaScript enabled!
+				button#clicker
+					b PET
+					br
+					p.button-small Session Pets: #[span#session 0]
+					- if (config.particles.length)
+						#click_animation
+				p.totalpets.hide-no-global Global Pets: #[span#global= stats.global]
+			.filler
+			.social
+				a#twitter(href="https://twitter.com/intent/tweet?text=" ~ encodeComponent(config.title) ~ "&url=https%3A%2F%2F" ~ encodeComponent(req.host) ~ "&hashtags=WantsPet", target="_blank")
+					svg(width="24", height="24", viewBox="0 0 24 24", alt="Tweet", title="Tweet", aria-label="Tweet")
+						path(fill="currentColor", d="M22.46,6C21.69,6.35 20.86,6.58 20,6.69C20.88,6.16 21.56,5.32 21.88,4.31C21.05,4.81 20.13,5.16 19.16,5.36C18.37,4.5 17.26,4 16,4C13.65,4 11.73,5.92 11.73,8.29C11.73,8.63 11.77,8.96 11.84,9.27C8.28,9.09 5.11,7.38 3,4.79C2.63,5.42 2.42,6.16 2.42,6.94C2.42,8.43 3.17,9.75 4.33,10.5C3.62,10.5 2.96,10.3 2.38,10C2.38,10 2.38,10 2.38,10.03C2.38,12.11 3.86,13.85 5.82,14.24C5.46,14.34 5.08,14.39 4.69,14.39C4.42,14.39 4.15,14.36 3.89,14.31C4.43,16 6,17.26 7.89,17.29C6.43,18.45 4.58,19.13 2.56,19.13C2.22,19.13 1.88,19.11 1.54,19.07C3.44,20.29 5.7,21 8.12,21C16,21 20.33,14.46 20.33,8.79C20.33,8.6 20.33,8.42 20.32,8.23C21.16,7.63 21.88,6.87 22.46,6Z")
+
+		script(nonce=nonce)!= "var config = " ~ serializeToJsonString(config)
+		script(nonce=nonce).
+			/** @type {WebSocket} */
+			var ws = null;
+
+			if (!window.BigInt)
+				window.BigInt = parseInt;
+
+			function connect() {
+				ws = new WebSocket((window.location.protocol == "https:" ? "wss://" : "ws://") + window.location.host + "/ws");
+				ws.binaryType = 'arraybuffer';
+				ws.onmessage = function(m) {
+					globalNum = window.BigInt64Array ? new BigInt64Array(m.data)[0] : BigInt(new Int32Array(m.data)[0]);
+					localOffset = localClicks;
+					update();
+				}
+				ws.onopen = function(m) {
+					document.body.classList.remove("no-connection");
+				}
+				ws.onclose = function() {
+					ws = null;
+					document.body.classList.add("no-connection");
+					setTimeout(connect, 1000);
+				}
+			}
+			setTimeout(connect, 1);
+
+			var globalNum = BigInt(0);
+			var totalLocalNum = parseInt(window.sessionStorage.getItem("clicks") || 0);
+			var localClicks = 0;
+			var localOffset = 0;
+			var clickTimeout = null;
+			function doClick() {
+				if (!ws) return;
+				totalLocalNum++;
+				localClicks++;
+				localOffset++;
+				update();
+				if (config.particles.length > 0)
+					animateClick();
+				if (clickTimeout === null)
+				{
+					clickTimeout = setTimeout(function() {
+						clickTimeout = null;
+						window.sessionStorage.setItem("clicks", totalLocalNum);
+						if (!ws || ws.readyState != WebSocket.OPEN) return;
+						var sent = localClicks;
+						var v = new Int8Array(1);
+						v[0] = localClicks;
+						localClicks = 0;
+						ws.send(v);
+					}, 100);
+				}
+			}
+			document.getElementById("clicker").onmousedown = doClick;
+
+			function animateClick() {
+				var container = document.getElementById("click_animation");
+				var child;
+				if (container.childElementCount < 20) {
+					child = document.createElement("img");
+					child.src = config.particles[container.childElementCount % config.particles.length].image;
+					container.appendChild(child);
+				}
+
+				for (var i = 0; i < container.children.length; i++) {
+					var child = container.children[i];
+					if (!child.classList.contains("visible")) {
+						child.style.left = (Math.random() * 100) + "%";
+						child.style.top = (Math.random() * 100) + "%";
+						var particle = config.particles[Math.floor(Math.random() * config.particles.length)];
+						child.src = particle.image;
+						child.style.width = particle.width + "px";
+						child.style.height = particle.height + "px";
+						child.classList.add("visible");
+						setTimeout(function() {
+							child.classList.remove("visible");
+						}, 500);
+						return;
+					}
+				}
+			}
+			
+			var currentTmp = BigInt(0);
+			var goal = BigInt(0);
+			function update() {
+				var n = globalNum + BigInt(localOffset);
+			
+				goal = n;
+				if (currentTmp + BigInt(100) < goal)
+					currentTmp = goal;
+				else if (currentTmp < goal)
+				{
+					var diff = goal - currentTmp;
+					var delay = 1;
+					if (diff >= 50)
+						delay = 2;
+					else if (diff >= 30)
+						delay = 5;
+					else if (diff >= 15)
+						delay = 10;
+					else
+						delay = 40;
+					currentTmp++;
+					if (currentTmp < goal)
+						setTimeout(update, 2 * delay + Math.random() * delay);
+				}
+				document.getElementById("session").textContent = totalLocalNum;
+				document.getElementById("global").textContent = currentTmp;
+
+				if (totalLocalNum)
+					document.getElementById("twitter").href = "https://twitter.com/intent/tweet?text="
+						+ encodeURIComponent(config.tweetTeaser.replace("{num}", totalLocalNum))
+						+ "&url=https%3A%2F%2F" + encodeURIComponent(window.location.hostname) + "&hashtags=WantsPet";
+			}
+			update();

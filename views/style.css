@@ -1,0 +1,161 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: $bg$;
+    color: $color$;
+}
+
+body, button, input {
+    font-family: $font$;
+}
+
+a {
+    color: $color$;
+}
+
+body, html, .wrapper {
+    width: 100%;
+    height: 100%;
+}
+
+h1 {
+    text-transform: uppercase;
+    font-size: 2rem;
+    text-align: center;
+    grid-area: title;
+    margin: auto;
+}
+
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 550px;
+    min-height: 300px;
+    height: 100vh;
+    max-height: 500px;
+    padding: 40px 0;
+    box-sizing: border-box;
+}
+
+.filler {
+    flex: 1;
+}
+
+.social {
+    padding: 1em 0 4em 0;
+}
+
+.social a {
+    color: #aaa;
+    text-decoration: none;
+}
+
+.social svg, .social img {
+    width: 24px;
+    height: 24px;
+}
+
+@media screen and (max-width: 600px) {
+    .filler {
+        display: block;
+        flex: unset;
+        flex-grow: 0;
+        flex-shrink: 10;
+        height: 50px;
+    }
+}
+
+.img-wrapper {
+    margin: 1em auto;
+
+}
+
+button {
+    margin: auto;
+    position: relative;
+    margin-top: 1rem;
+    margin-bottom: 3rem;
+    height: 200px;
+    min-height: 150px;
+    width: 80%;
+    border-radius: .5rem;
+    background-color: $color$;
+    color: $bg$;
+    font-size: 4rem;
+    border: none;
+    letter-spacing: 1rem;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: $color_hover$;
+}
+
+button:active {
+    box-shadow: 0 2px 0 $color_pressed$ inset;
+    padding-top: 2px;
+    padding-bottom: -2px;
+}
+
+button b {
+    font-weight: 500;
+    position: relative;
+    left: 0.25ex;
+}
+
+.button-small {
+    font-size: 1rem;
+    letter-spacing: normal;
+}
+
+.totalpets {
+    margin: auto;
+}
+
+.sessionpets {
+    margin: auto;
+    margin-right: 0;
+}
+
+.no-connection .hide-no-global {
+    display: none;
+}
+
+#click_animation {
+    pointer-events: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+}
+
+#click_animation img {
+    position: absolute;
+    opacity: 0;
+}
+
+#click_animation img.visible {
+    animation: click_animation 500ms ease-out;
+}
+
+@keyframes click_animation {
+    0% { transform: translate(-24px, -24px) scale(0.4); opacity: 0; }
+    10% { transform: translate(-24px, -24px) scale(0.8); opacity: 1; }
+    70% { transform: translate(-24px, -72px) scale(1); opacity: 1; }
+    100% { transform: translate(-24px, -72px) scale(0.8); opacity: 0; }
+}
