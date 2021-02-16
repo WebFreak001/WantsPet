@@ -39,7 +39,7 @@ html(lang="en")
 
 		style(nonce=nonce)!= config.style.applyVariables(import("style.css"))
 	body.no-connection
-		<div class="wrapper">
+		.wrapper
 			.filler
 			.content
 				h1= config.titleShort
@@ -61,6 +61,7 @@ html(lang="en")
 
 		script(nonce=nonce)!= "var config = " ~ serializeToJsonString(config)
 		script(nonce=nonce).
+			(function() {
 			/** @type {WebSocket} */
 			var ws = null;
 
@@ -91,6 +92,23 @@ html(lang="en")
 			var localClicks = 0;
 			var localOffset = 0;
 			var clickTimeout = null;
+			var isDown = 0;
+
+			function mouseDown(e) {
+				if (e && e.preventDefault)
+					e.preventDefault();
+
+				// parallel clicks with up to 2 keys
+				if (isDown >= 2)
+					return;
+				isDown++;
+				doClick();
+			}
+
+			function mouseUp() {
+				isDown--;
+			}
+
 			function doClick() {
 				if (!ws) return;
 				totalLocalNum++;
@@ -113,7 +131,15 @@ html(lang="en")
 					}, 100);
 				}
 			}
-			document.getElementById("clicker").onmousedown = doClick;
+			document.getElementById("clicker").onmousedown = mouseDown;
+			document.getElementById("clicker").onmouseup = mouseUp;
+			document.getElementById("clicker").pointermove = function(e) { e.preventDefault(); };
+			document.onkeydown = function(e) {
+				if (!e.repeat && (e.key == 'x' || e.key == 'z' || e.key == 'Enter')) mouseDown(e);
+			}
+			document.onkeyup = function(e) {
+				if (e.key == 'x' || e.key == 'z' || e.key == 'Enter') mouseUp(e);
+			}
 
 			function animateClick() {
 				var container = document.getElementById("click_animation");
@@ -175,3 +201,4 @@ html(lang="en")
 						+ "&url=https%3A%2F%2F" + encodeURIComponent(window.location.hostname) + "&hashtags=WantsPet";
 			}
 			update();
+			})();

@@ -3,7 +3,7 @@ docs.json
 __dummy.html
 *.o
 *.obj
-*.bin
+clicks_db.bin*
 tmpconfig.json
 dub.selections.json
 /wants-pet

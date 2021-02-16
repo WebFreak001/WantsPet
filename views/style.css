@@ -84,6 +84,10 @@ h1 {
 
 }
 
+#clicker {
+    touch-action: none;
+}
+
 button {
     margin: auto;
     position: relative;
